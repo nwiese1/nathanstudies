@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { lists } from "./data";
 
 export default function App() {
-  const [stage, setStage] = useState("select");
   const [selectedList, setSelectedList] = useState("");
   const [studyItems, setStudyItems] = useState([]);
   const [queue, setQueue] = useState([]);
@@ -11,6 +10,7 @@ export default function App() {
   const [attempts, setAttempts] = useState(0);
   const [forced, setForced] = useState(false);
   const [feedback, setFeedback] = useState("");
+  const [stage, setStage] = useState("select");
 
   useEffect(() => {
     document.title = selectedList || "NathanStudies";
@@ -42,10 +42,12 @@ export default function App() {
       setInput("");
       const newQueue = [...queue];
       newQueue.splice(index, 1);
-      setQueue(newQueue);
       if (newQueue.length === 0) {
-        setStage("done");
+        const reshuffled = shuffle([...studyItems]);
+        setQueue(reshuffled);
+        setIndex(0);
       } else {
+        setQueue(newQueue);
         setIndex(index % newQueue.length);
       }
     } else {
@@ -57,17 +59,17 @@ export default function App() {
           setInput("");
           const newQueue = [...queue];
           newQueue.splice(index, 1);
-          setQueue(newQueue);
           if (newQueue.length === 0) {
-            setStage("done");
+            const reshuffled = shuffle([...studyItems]);
+            setQueue(reshuffled);
+            setIndex(0);
           } else {
+            setQueue(newQueue);
             setIndex(index % newQueue.length);
           }
         } else {
           setFeedback("You must type the correct answer!");
-          setTimeout(() => {
-            setFeedback(`❌ Incorrect, the answer was "${current[1]}".`);
-          }, 2000);
+          setInput("");
         }
       } else {
         if (attempts + 1 >= 2) {
@@ -77,17 +79,17 @@ export default function App() {
           setFeedback("Wrong, try again!");
           setAttempts(attempts + 1);
         }
+        setInput("");
       }
-      setInput("");
     }
   };
 
   if (stage === "select")
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen space-y-6 px-4">
-        <h1 className="text-3xl font-semibold">Choose List To Study</h1>
+      <div className="flex flex-col items-center justify-center min-h-screen space-y-8 px-4">
+        <h1 className="text-5xl font-bold">Choose List To Study</h1>
         <select
-          className="bg-[#2c2d2f] rounded-2xl px-4 py-2 w-full max-w-xs"
+          className="bg-[#2c2d2f] rounded-2xl px-6 py-4 w-full max-w-lg text-2xl"
           value={selectedList}
           onChange={(e) => setSelectedList(e.target.value)}
         >
@@ -98,7 +100,7 @@ export default function App() {
         </select>
         <button
           onClick={handleSelect}
-          className="bg-white text-main px-6 py-2 rounded-2xl font-semibold hover:bg-gray-200 transition"
+          className="bg-white text-main px-8 py-4 rounded-2xl font-bold text-2xl hover:bg-gray-200 transition"
         >
           Select
         </button>
@@ -107,36 +109,17 @@ export default function App() {
 
   if (stage === "loading")
     return (
-      <div className="flex items-center justify-center min-h-screen text-2xl animate-pulse">
+      <div className="flex items-center justify-center min-h-screen text-4xl animate-pulse">
         Loading your study session...
       </div>
     );
 
-  if (stage === "done")
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen space-y-4 px-4">
-        <h2 className="text-3xl font-semibold">All done!</h2>
-        <p>You've mastered this list. Nice job!</p>
-        <button
-          className="bg-white text-main px-6 py-2 rounded-2xl font-semibold hover:bg-gray-200 transition"
-          onClick={() => {
-            setStage("select");
-            setSelectedList("");
-            setIndex(0);
-            setQueue([]);
-          }}
-        >
-          Study Again
-        </button>
-      </div>
-    );
-
   return (
-    <div className="flex flex-col justify-center min-h-screen w-full space-y-6 px-4 text-center">
+    <div className="flex flex-col justify-center min-h-screen w-full space-y-8 px-6 text-center">
       <div className="flex flex-col justify-center items-center h-full">
-        <h2 className="text-4xl font-semibold mb-8">{current[0]}</h2>
+        <h2 className="text-6xl font-bold mb-12">{current[0]}</h2>
         <input
-          className="bg-[#2c2d2f] rounded-2xl px-6 py-3 w-full max-w-md text-center text-lg focus:outline-none"
+          className="bg-[#2c2d2f] rounded-2xl px-8 py-5 w-full max-w-2xl text-center text-3xl focus:outline-none"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
@@ -144,12 +127,12 @@ export default function App() {
         />
         <button
           onClick={handleSubmit}
-          className="bg-white text-main px-6 py-3 mt-4 rounded-2xl font-semibold hover:bg-gray-200 transition"
+          className="bg-white text-main px-10 py-5 mt-6 rounded-2xl font-bold text-3xl hover:bg-gray-200 transition"
         >
           Submit
         </button>
-        {feedback && <p className="text-xl mt-4">{feedback}</p>}
-        <p className="text-sm opacity-70 mt-2">
+        {feedback && <p className="text-3xl mt-6">{feedback}</p>}
+        <p className="text-2xl opacity-70 mt-4">
           {studyItems.length - queue.length} Mastered / {studyItems.length} Total
         </p>
       </div>
