@@ -3,16 +3,16 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        quicksand: ["Quicksand", "sans-serif"],
+        quicksand: ["Quicksand", "sans-serif"]
       },
       colors: {
-        main: "#202124",
+        main: "#202124"
       },
       borderRadius: {
         xl: "1.5rem",
-        "2xl": "2rem",
-      },
-    },
+        "2xl": "2rem"
+      }
+    }
   },
-  plugins: [],
-};
+  plugins: []
+}
