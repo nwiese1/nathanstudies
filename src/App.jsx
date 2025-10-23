@@ -148,7 +148,7 @@ export default function App() {
         </button>
         {feedback && <p className="text-xl mt-4">{feedback}</p>}
         <p className="text-sm opacity-70 mt-2">
-          {studyItems.length - queue.length} mastered / {studyItems.length} total
+          {studyItems.length - queue.length} Mastered / {studyItems.length} Total
         </p>
       </div>
     </div>
