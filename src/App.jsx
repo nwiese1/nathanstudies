@@ -50,7 +50,6 @@ export default function App() {
       }
     } else {
       if (forced) {
-        // forced typing mode
         if (input.trim() === current[1]) {
           setFeedback("✅ Correct!");
           setAttempts(0);
@@ -66,8 +65,9 @@ export default function App() {
           }
         } else {
           setFeedback("You must type the correct answer!");
-          wait(1)
-          setFeedback(`❌ Incorrect, the answer was "${current[1]}".`);
+          setTimeout(() => {
+            setFeedback(`❌ Incorrect, the answer was "${current[1]}".`);
+          }, 2000);
         }
       } else {
         if (attempts + 1 >= 2) {
