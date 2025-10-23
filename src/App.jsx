@@ -9,6 +9,7 @@ export default function App() {
   const [index, setIndex] = useState(0);
   const [input, setInput] = useState("");
   const [attempts, setAttempts] = useState(0);
+  const [forced, setForced] = useState(false);
   const [feedback, setFeedback] = useState("");
 
   useEffect(() => {
@@ -33,9 +34,11 @@ export default function App() {
   const handleSubmit = () => {
     if (!current) return;
     const correct = input.trim().toLowerCase() === current[1].toLowerCase();
+
     if (correct) {
       setFeedback("✅ Correct!");
       setAttempts(0);
+      setForced(false);
       setInput("");
       const newQueue = [...queue];
       newQueue.splice(index, 1);
@@ -43,39 +46,50 @@ export default function App() {
       if (newQueue.length === 0) {
         setStage("done");
       } else {
-        setTimeout(() => {
-          setFeedback("");
-          setIndex(index % newQueue.length);
-        }, 700);
+        setIndex(index % newQueue.length);
       }
     } else {
-      const tries = attempts + 1;
-      setAttempts(tries);
-      if (tries >= 5) {
-        setFeedback(`❌ The answer was "${current[1]}"`);
-        setAttempts(0);
-        setInput("");
-        setQueue([...queue, current]);
-        setTimeout(() => {
-          setFeedback("");
-          setIndex((index + 1) % queue.length);
-        }, 1200);
+      if (forced) {
+        // forced typing mode
+        if (input.trim() === current[1]) {
+          setFeedback("✅ Correct!");
+          setAttempts(0);
+          setForced(false);
+          setInput("");
+          const newQueue = [...queue];
+          newQueue.splice(index, 1);
+          setQueue(newQueue);
+          if (newQueue.length === 0) {
+            setStage("done");
+          } else {
+            setIndex(index % newQueue.length);
+          }
+        } else {
+          setFeedback("You must type the correct answer!");
+        }
       } else {
-        setFeedback("Wrong, try again!");
+        if (attempts + 1 >= 2) {
+          setFeedback(`❌ You must type: "${current[1]}"`);
+          setForced(true);
+        } else {
+          setFeedback("Wrong, try again!");
+          setAttempts(attempts + 1);
+        }
       }
+      setInput("");
     }
   };
 
   if (stage === "select")
     return (
-      <div className="flex flex-col items-center justify-center h-screen space-y-6">
+      <div className="flex flex-col items-center justify-center min-h-screen space-y-6 px-4">
         <h1 className="text-3xl font-semibold">Choose list to study</h1>
         <select
-          className="bg-[#2c2d2f] rounded-2xl px-4 py-2"
+          className="bg-[#2c2d2f] rounded-2xl px-4 py-2 w-full max-w-xs"
           value={selectedList}
           onChange={(e) => setSelectedList(e.target.value)}
         >
-          <option value="">-- Select --</option>
+          <option value="">Select</option>
           {Object.keys(lists).map((name) => (
             <option key={name}>{name}</option>
           ))}
@@ -91,14 +105,14 @@ export default function App() {
 
   if (stage === "loading")
     return (
-      <div className="flex items-center justify-center h-screen text-2xl animate-pulse">
+      <div className="flex items-center justify-center min-h-screen text-2xl animate-pulse">
         Loading your study session...
       </div>
     );
 
   if (stage === "done")
     return (
-      <div className="flex flex-col items-center justify-center h-screen space-y-4">
+      <div className="flex flex-col items-center justify-center min-h-screen space-y-4 px-4">
         <h2 className="text-3xl font-semibold">All done!</h2>
         <p>You've mastered this list. Nice job!</p>
         <button
@@ -116,25 +130,27 @@ export default function App() {
     );
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen space-y-6 text-center px-4">
-      <h2 className="text-2xl font-semibold">{current[0]}</h2>
-      <input
-        className="bg-[#2c2d2f] rounded-2xl px-4 py-2 w-64 text-center focus:outline-none"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-        placeholder="Type the definition"
-      />
-      <button
-        onClick={handleSubmit}
-        className="bg-white text-main px-6 py-2 rounded-2xl font-semibold hover:bg-gray-200 transition"
-      >
-        Submit
-      </button>
-      {feedback && <p className="text-lg">{feedback}</p>}
-      <p className="text-sm opacity-70">
-        {studyItems.length - queue.length} mastered / {studyItems.length} total
-      </p>
+    <div className="flex flex-col justify-center min-h-screen w-full space-y-6 px-4 text-center">
+      <div className="flex flex-col justify-center items-center h-full">
+        <h2 className="text-4xl font-semibold mb-8">{current[0]}</h2>
+        <input
+          className="bg-[#2c2d2f] rounded-2xl px-6 py-3 w-full max-w-md text-center text-lg focus:outline-none"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+          placeholder={forced ? "Type the correct answer" : "Type the definition"}
+        />
+        <button
+          onClick={handleSubmit}
+          className="bg-white text-main px-6 py-3 mt-4 rounded-2xl font-semibold hover:bg-gray-200 transition"
+        >
+          Submit
+        </button>
+        {feedback && <p className="text-xl mt-4">{feedback}</p>}
+        <p className="text-sm opacity-70 mt-2">
+          {studyItems.length - queue.length} mastered / {studyItems.length} total
+        </p>
+      </div>
     </div>
   );
 }
