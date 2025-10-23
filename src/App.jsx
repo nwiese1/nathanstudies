@@ -69,7 +69,7 @@ export default function App() {
         }
       } else {
         if (attempts + 1 >= 2) {
-          setFeedback(`❌ You must type: "${current[1]}"`);
+          setFeedback(`❌ Incorrect, the answer was "${current[1]}".`);
           setForced(true);
         } else {
           setFeedback("Wrong, try again!");
@@ -83,7 +83,7 @@ export default function App() {
   if (stage === "select")
     return (
       <div className="flex flex-col items-center justify-center min-h-screen space-y-6 px-4">
-        <h1 className="text-3xl font-semibold">Choose list to study</h1>
+        <h1 className="text-3xl font-semibold">Choose List To Study</h1>
         <select
           className="bg-[#2c2d2f] rounded-2xl px-4 py-2 w-full max-w-xs"
           value={selectedList}
