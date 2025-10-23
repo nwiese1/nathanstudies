@@ -66,6 +66,8 @@ export default function App() {
           }
         } else {
           setFeedback("You must type the correct answer!");
+          wait(1)
+          setFeedback(`❌ Incorrect, the answer was "${current[1]}".`);
         }
       } else {
         if (attempts + 1 >= 2) {
