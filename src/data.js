@@ -34,6 +34,6 @@ export const lists = {
     ["bon vivant", "indulger in luxury"],
     ["saturnine", "gloomy and remote"],
     ["sedentary", "sitting"],
-    ["pusillanimous", "small-minded"],
-  ],
+    ["pusillanimous", "small-minded"]
+  ]
 };
