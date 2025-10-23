@@ -138,7 +138,7 @@ export default function App() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-          placeholder={forced ? "Type the correct answer" : "Type the definition"}
+          placeholder={forced ? "Type The Correct Answer" : "Type The Definition"}
         />
         <button
           onClick={handleSubmit}
