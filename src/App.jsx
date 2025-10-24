@@ -11,6 +11,8 @@ export default function App() {
   const [feedback, setFeedback] = useState("");
   const [stage, setStage] = useState("select");
   const [showStats, setShowStats] = useState(false);
+  const [remainingThisRound, setRemainingThisRound] = useState([]);
+  const [theme, setTheme] = useState("dark");
 
   useEffect(() => {
     document.title = selectedList || "NathanStudies";
@@ -32,6 +34,15 @@ export default function App() {
     return state.length - 1;
   };
 
+  const getNextIndex = (state, lastIndex) => {
+    if (remainingThisRound.length > 0) {
+      const nextIdx = remainingThisRound[0];
+      setRemainingThisRound((prev) => prev.slice(1));
+      return nextIdx;
+    }
+    return pickWeightedIndex(state, lastIndex);
+  };
+
   const handleSelect = () => {
     if (!selectedList) return;
     setStage("loading");
@@ -46,18 +57,14 @@ export default function App() {
       }));
       const shuffled = shuffleArray(initial);
       setItemsState(shuffled);
-      setCurrentIndex(pickWeightedIndex(shuffled));
+      setRemainingThisRound(shuffled.map((_, i) => i));
+      setCurrentIndex(shuffled.length > 0 ? 0 : null);
       setStage("study");
       setAttempts(0);
       setForced(false);
       setInput("");
       setFeedback("");
     }, 600);
-  };
-
-  const moveToNext = (state, lastIndex) => {
-    if (!state || state.length === 0) return null;
-    return pickWeightedIndex(state, lastIndex);
   };
 
   const updateItem = (index, change) => {
@@ -77,18 +84,41 @@ export default function App() {
   };
 
   const handleSubmit = () => {
-    if (input.trim() === "://list") {
+    const cmd = input.trim().toLowerCase();
+    if (cmd === "://list") {
       setShowStats(true);
       setInput("");
       setFeedback("");
+      return;
+    }
+    if (cmd === "://light") {
+      setTheme("light");
+      setInput("");
+      setFeedback("Switched to light mode");
+      return;
+    }
+    if (cmd === "://dark") {
+      setTheme("dark");
+      setInput("");
+      setFeedback("Switched to dark mode");
       return;
     }
 
     if (currentIndex === null) return;
     const current = itemsState[currentIndex];
     if (!current) return;
+
     const answer = current.def;
     const user = input.trim();
+
+    if (user === "") {
+      setForced(true);
+      setAttempts(0);
+      setInput("");
+      setFeedback("You must type the correct answer!");
+      return;
+    }
+
     const isCorrect = user.toLowerCase() === answer.toLowerCase();
 
     if (isCorrect) {
@@ -97,7 +127,7 @@ export default function App() {
       setAttempts(0);
       setForced(false);
       setInput("");
-      setCurrentIndex(moveToNext(itemsState, currentIndex));
+      setCurrentIndex(getNextIndex(itemsState, currentIndex));
       return;
     }
 
@@ -122,14 +152,19 @@ export default function App() {
     }
   };
 
+  const bgColor = theme === "dark" ? "#202124" : "#fdfdfd";
+  const textColor = theme === "dark" ? "#fff" : "#202124";
+  const inputBg = theme === "dark" ? "#2c2d2f" : "#eee";
+
   if (stage === "select")
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen space-y-6 px-4 bg-[#202124]">
+      <div className={`flex flex-col items-center justify-center min-h-screen space-y-6 px-4`} style={{ backgroundColor: bgColor, color: textColor }}>
         <h1 className="text-4xl font-bold">Choose List To Study</h1>
         <select
-          className="bg-[#2c2d2f] rounded-2xl px-4 py-3 w-full max-w-lg text-xl"
+          className="rounded-2xl px-4 py-3 w-full max-w-lg text-xl"
           value={selectedList}
           onChange={(e) => setSelectedList(e.target.value)}
+          style={{ backgroundColor: inputBg, color: textColor }}
         >
           <option value="">Select</option>
           {Object.keys(lists).map((name) => (
@@ -138,7 +173,8 @@ export default function App() {
         </select>
         <button
           onClick={handleSelect}
-          className="bg-white text-main px-6 py-3 rounded-2xl font-bold text-xl hover:bg-gray-200 transition"
+          className="px-6 py-3 rounded-2xl font-bold text-xl hover:opacity-80 transition"
+          style={{ backgroundColor: theme === "dark" ? "#fff" : "#202124", color: theme === "dark" ? "#202124" : "#fff" }}
         >
           Select
         </button>
@@ -147,7 +183,7 @@ export default function App() {
 
   if (stage === "loading")
     return (
-      <div className="flex items-center justify-center min-h-screen text-3xl animate-pulse bg-[#202124]">
+      <div className="flex items-center justify-center min-h-screen text-3xl animate-pulse" style={{ backgroundColor: bgColor, color: textColor }}>
         Loading your study session...
       </div>
     );
@@ -155,19 +191,21 @@ export default function App() {
   const current = itemsState[currentIndex] ?? { term: "", def: "" };
 
   return (
-    <div className="flex flex-col justify-center min-h-screen w-full space-y-6 px-6 text-center bg-[#202124]">
+    <div className="flex flex-col justify-center min-h-screen w-full space-y-6 px-6 text-center" style={{ backgroundColor: bgColor, color: textColor }}>
       <div className="flex flex-col justify-center items-center h-full">
         <h2 className="text-3xl font-bold mb-6">{current.term}</h2>
         <input
-          className="bg-[#2c2d2f] rounded-2xl px-4 py-3 w-full max-w-xl text-center text-xl focus:outline-none"
+          className="rounded-2xl px-4 py-3 w-full max-w-xl text-center text-xl focus:outline-none"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
           placeholder={forced ? "Type The Correct Answer" : "Type The Definition"}
+          style={{ backgroundColor: inputBg, color: textColor }}
         />
         <button
           onClick={handleSubmit}
-          className="bg-white text-main px-6 py-3 mt-4 rounded-2xl font-bold text-xl hover:bg-gray-200 transition"
+          className="px-6 py-3 mt-4 rounded-2xl font-bold text-xl hover:opacity-80 transition"
+          style={{ backgroundColor: theme === "dark" ? "#fff" : "#202124", color: theme === "dark" ? "#202124" : "#fff" }}
         >
           Submit
         </button>
@@ -175,22 +213,24 @@ export default function App() {
       </div>
 
       {showStats && (
-        <div className="fixed inset-0 flex items-center justify-center bg-[#202124]/95">
-          <div className="bg-[#1a1a1c] text-white rounded-2xl p-6 w-full max-w-3xl mx-4">
+        <div className="fixed inset-0 flex items-center justify-center" style={{ backgroundColor: theme === "dark" ? "rgba(32,33,36,0.95)" : "rgba(255,255,255,0.95)" }}>
+          <div style={{ backgroundColor: theme === "dark" ? "#1a1a1c" : "#f4f4f4", color: textColor }} className="rounded-2xl p-6 w-full max-w-3xl mx-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-2xl font-bold">Stats</h3>
               <button
                 onClick={() => setShowStats(false)}
-                className="bg-white text-[#202124] px-3 py-1 rounded-md font-semibold"
+                className="px-3 py-1 rounded-md font-semibold"
+                style={{ backgroundColor: theme === "dark" ? "#fff" : "#202124", color: theme === "dark" ? "#202124" : "#fff" }}
               >
                 Close
               </button>
             </div>
-            <div className="max-h-[60vh] overflow-auto space-y-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-[#1a1a1c]">
+            <div className="max-h-[60vh] overflow-auto space-y-2">
               {itemsState.map((it, idx) => (
                 <div
                   key={idx}
-                  className="p-2 rounded-md flex justify-between bg-[#1c1c1e]"
+                  className="p-2 rounded-md flex justify-between"
+                  style={{ backgroundColor: theme === "dark" ? "#1c1c1e" : "#e0e0e0" }}
                 >
                   <div>{it.term}</div>
                   <div className="flex space-x-4 text-sm">
