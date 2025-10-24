@@ -6,7 +6,6 @@ export default function App() {
   const [itemsState, setItemsState] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(null);
   const [input, setInput] = useState("");
-  const [startedTyping, setStartedTyping] = useState(false);
   const [attempts, setAttempts] = useState(0);
   const [forced, setForced] = useState(false);
   const [feedback, setFeedback] = useState("❕ Enter a response to begin.");
@@ -64,7 +63,6 @@ export default function App() {
       setAttempts(0);
       setForced(false);
       setInput("");
-      setStartedTyping(false);
       setFeedback("❕ Enter a response to begin.");
     }, 600);
   };
@@ -85,29 +83,18 @@ export default function App() {
     });
   };
 
+  const moveToNext = () => {
+    setCurrentIndex(getNextIndex(itemsState, currentIndex));
+    setAttempts(0);
+    setForced(false);
+    setInput("");
+  };
+
   const handleSubmit = () => {
     const cmd = input.trim().toLowerCase();
-    if (cmd === "://list") {
-      setShowStats(true);
-      setInput("");
-      setStartedTyping(false);
-      setFeedback("");
-      return;
-    }
-    if (cmd === "://light") {
-      setTheme("light");
-      setInput("");
-      setStartedTyping(false);
-      setFeedback("Switched to light mode");
-      return;
-    }
-    if (cmd === "://dark") {
-      setTheme("dark");
-      setInput("");
-      setStartedTyping(false);
-      setFeedback("Switched to dark mode");
-      return;
-    }
+    if (cmd === "://list") { setShowStats(true); setInput(""); setFeedback(""); return; }
+    if (cmd === "://light") { setTheme("light"); setInput(""); setFeedback("Switched to light mode"); return; }
+    if (cmd === "://dark") { setTheme("dark"); setInput(""); setFeedback("Switched to dark mode"); return; }
 
     if (currentIndex === null) return;
     const current = itemsState[currentIndex];
@@ -116,17 +103,14 @@ export default function App() {
     const answer = current.def;
     const user = input.trim();
 
-    if (!startedTyping) {
-      setStartedTyping(true);
-      if (user === "") {
-        const prevFeedback = `❌ Incorrect, the answer was "${answer}".`;
-        setFeedback(prevFeedback);
-        updateItem(currentIndex, { wrong: 1, weight: 2 });
-        setForced(true);
-        setAttempts(0);
-        setInput("");
-        return;
-      }
+    if (user === "" && !forced) {
+      const prevFeedback = `❌ Incorrect, the answer was "${answer}".`;
+      setFeedback(prevFeedback);
+      updateItem(currentIndex, { wrong: 1, weight: 2 });
+      setForced(true);
+      setAttempts(0);
+      setInput("");
+      return;
     }
 
     const isCorrect = user.toLowerCase() === answer.toLowerCase();
@@ -134,37 +118,23 @@ export default function App() {
     if (isCorrect) {
       setFeedback("✅ Correct!");
       if (!forced) updateItem(currentIndex, { correct: 1, weight: -1 });
-      setAttempts(0);
-      setForced(false);
-      setInput("");
-      setStartedTyping(false);
-      setCurrentIndex(getNextIndex(itemsState, currentIndex));
+      moveToNext();
       return;
     }
 
-    if (forced) {
+    if (forced || attempts >= 1) {
       const prevFeedback = `❌ Incorrect, the answer was "${answer}".`;
       setFeedback("You must type the correct answer!");
       setInput("");
-      setStartedTyping(false);
+      setForced(true);
+      setAttempts(0);
       setTimeout(() => setFeedback(prevFeedback), 2000);
       return;
     }
 
-    if (attempts + 1 >= 2) {
-      const prevFeedback = `❌ Incorrect, the answer was "${answer}".`;
-      setFeedback(prevFeedback);
-      setForced(true);
-      setAttempts(0);
-      setInput("");
-      setStartedTyping(false);
-      updateItem(currentIndex, { wrong: 1, weight: 2 });
-    } else {
-      setFeedback("Wrong, try again!");
-      setAttempts((a) => a + 1);
-      setInput("");
-      setStartedTyping(false);
-    }
+    setFeedback("Wrong, try again!");
+    setAttempts((a) => a + 1);
+    setInput("");
   };
 
   const bgColor = theme === "dark" ? "#202124" : "#f0f0e8";
