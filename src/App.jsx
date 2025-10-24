@@ -151,7 +151,10 @@ export default function App() {
         updateItem(currentIndex, { correct: 1, weight: -1 });
         setCorrectCount((c) => c + 1);
         setForced(false);
-        moveToNext();
+
+        setTimeout(() => {
+          moveToNext();
+        }, 2000); // show for 2 seconds
       } else {
         setFeedback("❌ Still incorrect. Type the correct answer to continue.");
       }
@@ -175,7 +178,9 @@ export default function App() {
       setFeedback("✅ Correct!");
       updateItem(currentIndex, { correct: 1, weight: -1 });
       setCorrectCount((c) => c + 1);
-      moveToNext();
+      setTimeout(() => {
+        moveToNext();
+      }, 2000);
       return;
     }
 
@@ -257,9 +262,7 @@ export default function App() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-          placeholder={
-            forced ? "Type The Correct Answer" : "Type The Definition"
-          }
+          placeholder={forced ? "Type The Correct Answer" : "Type The Definition"}
           style={{ backgroundColor: inputBg, color: textColor }}
         />
         <button
@@ -272,7 +275,12 @@ export default function App() {
         >
           Submit
         </button>
-        {feedback && <p className="text-xl mt-4">{feedback}</p>}
+        <p
+          className="text-xl mt-4"
+          style={{ minHeight: "1.5em", visibility: feedback ? "visible" : "hidden" }}
+        >
+          {feedback || "Placeholder"}
+        </p>
       </div>
 
       {showStats && (
