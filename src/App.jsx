@@ -19,7 +19,6 @@ export default function App() {
 
   const shuffleArray = (arr) => arr.sort(() => Math.random() - 0.5);
 
-  // Picks a word weighted by its weight (higher weight = more likely)
   const pickWeightedIndex = (state, avoidIndex = null) => {
     if (!state || state.length === 0) return null;
     const total = state.reduce((s, it) => s + (it.weight ?? 1), 0);
@@ -34,14 +33,12 @@ export default function App() {
     return state.length - 1;
   };
 
-  // Decides next word index
   const getNextIndex = (state, lastIndex) => {
     if (remainingThisRound.length > 0) {
       const nextIdx = remainingThisRound[0];
       setRemainingThisRound((prev) => prev.slice(1));
       return nextIdx;
     }
-    // After first round, weighted random
     return pickWeightedIndex(state, lastIndex);
   };
 
@@ -53,10 +50,9 @@ export default function App() {
       const initial = raw.map(([t, d]) => ({
         term: t,
         def: d,
-        weight: 1,   // starts at 1
+        weight: 1,
         correct: 0,
         wrong: 0,
-        lastSeen: 0, // for optional spaced repetition tracking
       }));
       const shuffled = shuffleArray(initial);
       setItemsState(shuffled);
@@ -100,5 +96,129 @@ export default function App() {
 
     const answer = current.def;
     const user = input.trim();
+
+    if (user === "") {
+      setForced(true);
+      setAttempts(0);
+      setInput("");
+      setFeedback("You must type the correct answer!");
+      return;
+    }
+
     const isCorrect = user.toLowerCase() === answer.toLowerCase();
 
+    if (isCorrect) {
+      setFeedback("✅ Correct!");
+      if (!forced) updateItem(currentIndex, { correct: 1, weight: -1 });
+      setAttempts(0);
+      setForced(false);
+      setInput("");
+      setCurrentIndex(getNextIndex(itemsState, currentIndex));
+      return;
+    }
+
+    if (forced) {
+      const prevFeedback = `❌ Incorrect, the answer was "${answer}".`;
+      setFeedback("You must type the correct answer!");
+      setInput("");
+      setTimeout(() => setFeedback(prevFeedback), 2000);
+      return;
+    }
+
+    if (attempts + 1 >= 2) {
+      setFeedback(`❌ Incorrect, the answer was "${answer}".`);
+      setForced(true);
+      setAttempts(0);
+      setInput("");
+      updateItem(currentIndex, { wrong: 1, weight: 2 });
+    } else {
+      setFeedback("Wrong, try again!");
+      setAttempts((a) => a + 1);
+      setInput("");
+    }
+  };
+
+  if (stage === "select")
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen space-y-6 px-4 bg-[#202124]">
+        <h1 className="text-4xl font-bold">Choose List To Study</h1>
+        <select
+          className="bg-[#2c2d2f] rounded-2xl px-4 py-3 w-full max-w-lg text-xl"
+          value={selectedList}
+          onChange={(e) => setSelectedList(e.target.value)}
+        >
+          <option value="">Select</option>
+          {Object.keys(lists).map((name) => (
+            <option key={name}>{name}</option>
+          ))}
+        </select>
+        <button
+          onClick={handleSelect}
+          className="bg-white text-main px-6 py-3 rounded-2xl font-bold text-xl hover:bg-gray-200 transition"
+        >
+          Select
+        </button>
+      </div>
+    );
+
+  if (stage === "loading")
+    return (
+      <div className="flex items-center justify-center min-h-screen text-3xl animate-pulse bg-[#202124]">
+        Loading your study session...
+      </div>
+    );
+
+  const current = itemsState[currentIndex] ?? { term: "", def: "" };
+
+  return (
+    <div className="flex flex-col justify-center min-h-screen w-full space-y-6 px-6 text-center bg-[#202124]">
+      <div className="flex flex-col justify-center items-center h-full">
+        <h2 className="text-3xl font-bold mb-6">{current.term}</h2>
+        <input
+          className="bg-[#2c2d2f] rounded-2xl px-4 py-3 w-full max-w-xl text-center text-xl focus:outline-none"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+          placeholder={forced ? "Type The Correct Answer" : "Type The Definition"}
+        />
+        <button
+          onClick={handleSubmit}
+          className="bg-white text-main px-6 py-3 mt-4 rounded-2xl font-bold text-xl hover:bg-gray-200 transition"
+        >
+          Submit
+        </button>
+        {feedback && <p className="text-xl mt-4">{feedback}</p>}
+      </div>
+
+      {showStats && (
+        <div className="fixed inset-0 flex items-center justify-center bg-[#202124]/95">
+          <div className="bg-[#1a1a1c] text-white rounded-2xl p-6 w-full max-w-3xl mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-2xl font-bold">Stats</h3>
+              <button
+                onClick={() => setShowStats(false)}
+                className="bg-white text-[#202124] px-3 py-1 rounded-md font-semibold"
+              >
+                Close
+              </button>
+            </div>
+            <div className="max-h-[60vh] overflow-auto space-y-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-[#1a1a1c]">
+              {itemsState.map((it, idx) => (
+                <div
+                  key={idx}
+                  className="p-2 rounded-md flex justify-between bg-[#1c1c1e]"
+                >
+                  <div>{it.term}</div>
+                  <div className="flex space-x-4 text-sm">
+                    <span>✅: {it.correct}</span>
+                    <span>❌: {it.wrong}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
