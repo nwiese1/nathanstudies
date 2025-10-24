@@ -82,7 +82,7 @@ export default function App() {
     setTimeout(() => {
       setShowStats(true);
       setStatsLoading(false);
-    }, 2000);
+    }, 1000);
   };
 
   const closeStats = () => {
@@ -90,7 +90,7 @@ export default function App() {
     setTimeout(() => {
       setShowStats(false);
       setStatsLoading(false);
-    }, 2000);
+    }, 1000);
   };
 
   const handleSubmit = () => {
@@ -108,7 +108,7 @@ export default function App() {
 
     if (isCorrect) {
       setFeedback("✅ Correct!");
-      updateItem(currentIndex, { correct: 1, weight: -1 });
+      if (!forced) updateItem(currentIndex, { correct: 1, weight: -1 }); // Only count correct if NOT in forced mode
       setAttempts(0);
       setForced(false);
       setInput("");
@@ -191,9 +191,10 @@ export default function App() {
 
       {showStats && (
         <div className="fixed inset-0 flex items-center justify-center bg-[#202124]/95">
-          <div className="bg-[#202124] text-white rounded-2xl p-6 w-full max-w-3xl mx-4">
+          <div className="bg-[#202124] border border-[#1a1a1c] text-white rounded-2xl p-6 w-full max-w-3xl mx-4">
             {statsLoading ? (
-              <div className="flex items-center justify-center h-32 text-2xl animate-pulse">
+              <div className="flex flex-col items-center justify-center h-32 text-2xl animate-spin">
+                <div className="border-4 border-white border-t-transparent rounded-full w-12 h-12 mb-2"></div>
                 Loading stats...
               </div>
             ) : (
@@ -211,7 +212,7 @@ export default function App() {
                   {itemsState.map((it, idx) => (
                     <div
                       key={idx}
-                      className="p-2 rounded-md flex justify-between bg-[#202124]/90 border border-gray-700"
+                      className="p-2 rounded-md flex justify-between bg-[#1c1c1e]"
                     >
                       <div>{it.term}</div>
                       <div className="flex space-x-4 text-sm">
