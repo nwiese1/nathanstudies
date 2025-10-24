@@ -13,13 +13,14 @@ export default function App() {
   const [showStats, setShowStats] = useState(false);
   const [remainingThisRound, setRemainingThisRound] = useState([]);
   const [theme, setTheme] = useState("dark");
-  const [doneCount, setDoneCount] = useState(0);
+  const [correctCount, setCorrectCount] = useState(0);
+  const [triedCount, setTriedCount] = useState(0);
 
   useEffect(() => {
     document.title = selectedList || "NathanStudies";
   }, [selectedList]);
 
-  const shuffleArray = (arr) => arr.sort(() => Math.random() - 0.5);
+  const shuffleArray = (arr) => arr.slice().sort(() => Math.random() - 0.5);
 
   const pickWeightedIndex = (state, avoidIndex = null) => {
     if (!state || state.length === 0) return null;
@@ -56,7 +57,8 @@ export default function App() {
       setForced(false);
       setInput("");
       setFeedback("❕ Enter a response to begin.");
-      setDoneCount(0);
+      setCorrectCount(0);
+      setTriedCount(0);
     }, 600);
   };
 
@@ -81,18 +83,20 @@ export default function App() {
       if (prev.length > 0) {
         const [next, ...rest] = prev;
         setCurrentIndex(next);
-        setDoneCount((c) => c + 1);
+        setTriedCount((c) => c + 1);
         setAttempts(0);
         setForced(false);
         setInput("");
+        setFeedback("");
         return rest;
       } else {
         const next = pickWeightedIndex(itemsState, currentIndex);
         setCurrentIndex(next);
-        setDoneCount((c) => c + 1);
+        setTriedCount((c) => c + 1);
         setAttempts(0);
         setForced(false);
         setInput("");
+        setFeedback("");
         return prev;
       }
     });
@@ -141,6 +145,7 @@ export default function App() {
     if (isCorrect) {
       setFeedback("✅ Correct!");
       if (!forced) updateItem(currentIndex, { correct: 1, weight: -1 });
+      setCorrectCount((c) => c + 1);
       moveToNext();
       return;
     }
@@ -163,6 +168,8 @@ export default function App() {
   const bgColor = theme === "dark" ? "#202124" : "#f0f0e8";
   const textColor = theme === "dark" ? "#fff" : "#202124";
   const inputBg = theme === "dark" ? "#2c2d2f" : "#e2e0d6";
+
+  const pct = triedCount === 0 ? 0 : Math.round((correctCount / triedCount) * 1000) / 10;
 
   if (stage === "select")
     return (
@@ -202,7 +209,7 @@ export default function App() {
     <div className="flex flex-col justify-center min-h-screen w-full space-y-6 px-6 text-center" style={{ backgroundColor: bgColor, color: textColor }}>
       <div className="flex flex-col justify-center items-center h-full">
         <h2 className="text-3xl font-bold mb-2">{current.term}</h2>
-        <p className="text-sm mb-4">Questions Completed: {doneCount}</p>
+        <p className="text-sm mb-4">{correctCount}/{triedCount} - {pct.toFixed(1)}%</p>
         <input
           className="rounded-2xl px-4 py-3 w-full max-w-xl text-center text-xl focus:outline-none"
           value={input}
@@ -234,7 +241,7 @@ export default function App() {
                 Close
               </button>
             </div>
-            <div className="text-sm mb-2">Questions Completed: {doneCount} / {itemsState.length}</div>
+            <div className="text-sm mb-2">{correctCount}/{triedCount} - {pct.toFixed(1)}%</div>
             <div className="max-h-[60vh] overflow-auto space-y-2">
               {itemsState.map((it, idx) => (
                 <div
