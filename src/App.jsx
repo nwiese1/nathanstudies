@@ -3,7 +3,7 @@ import { lists } from "./data";
 
 export default function App() {
   const [selectedList, setSelectedList] = useState("");
-  const [itemsState, setItemsState] = useState([]); // { term, def, weight, correct, wrong }
+  const [itemsState, setItemsState] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(null);
   const [input, setInput] = useState("");
   const [attempts, setAttempts] = useState(0);
@@ -11,7 +11,6 @@ export default function App() {
   const [feedback, setFeedback] = useState("");
   const [stage, setStage] = useState("select");
   const [showStats, setShowStats] = useState(false);
-  const [statsLoading, setStatsLoading] = useState(false);
 
   useEffect(() => {
     document.title = selectedList || "NathanStudies";
@@ -77,25 +76,11 @@ export default function App() {
     });
   };
 
-  const openStats = () => {
-    setStatsLoading(true);
-    setTimeout(() => {
-      setShowStats(true);
-      setStatsLoading(false);
-    }, 1000);
-  };
-
-  const closeStats = () => {
-    setStatsLoading(true);
-    setTimeout(() => {
-      setShowStats(false);
-      setStatsLoading(false);
-    }, 1000);
-  };
-
   const handleSubmit = () => {
     if (input.trim() === "://list") {
-      openStats();
+      setShowStats(true);
+      setInput("");
+      setFeedback("");
       return;
     }
 
@@ -108,7 +93,7 @@ export default function App() {
 
     if (isCorrect) {
       setFeedback("✅ Correct!");
-      if (!forced) updateItem(currentIndex, { correct: 1, weight: -1 }); // Only count correct if NOT in forced mode
+      if (!forced) updateItem(currentIndex, { correct: 1, weight: -1 });
       setAttempts(0);
       setForced(false);
       setInput("");
@@ -139,7 +124,7 @@ export default function App() {
 
   if (stage === "select")
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen space-y-6 px-4">
+      <div className="flex flex-col items-center justify-center min-h-screen space-y-6 px-4 bg-[#202124]">
         <h1 className="text-4xl font-bold">Choose List To Study</h1>
         <select
           className="bg-[#2c2d2f] rounded-2xl px-4 py-3 w-full max-w-lg text-xl"
@@ -162,7 +147,7 @@ export default function App() {
 
   if (stage === "loading")
     return (
-      <div className="flex items-center justify-center min-h-screen text-3xl animate-pulse">
+      <div className="flex items-center justify-center min-h-screen text-3xl animate-pulse bg-[#202124]">
         Loading your study session...
       </div>
     );
@@ -170,7 +155,7 @@ export default function App() {
   const current = itemsState[currentIndex] ?? { term: "", def: "" };
 
   return (
-    <div className="flex flex-col justify-center min-h-screen w-full space-y-6 px-6 text-center">
+    <div className="flex flex-col justify-center min-h-screen w-full space-y-6 px-6 text-center bg-[#202124]">
       <div className="flex flex-col justify-center items-center h-full">
         <h2 className="text-3xl font-bold mb-6">{current.term}</h2>
         <input
@@ -191,39 +176,30 @@ export default function App() {
 
       {showStats && (
         <div className="fixed inset-0 flex items-center justify-center bg-[#202124]/95">
-          <div className="bg-[#202124] border border-[#1a1a1c] text-white rounded-2xl p-6 w-full max-w-3xl mx-4">
-            {statsLoading ? (
-              <div className="flex flex-col items-center justify-center h-32 text-2xl animate-spin">
-                <div className="border-4 border-white border-t-transparent rounded-full w-12 h-12 mb-2"></div>
-                Loading stats...
-              </div>
-            ) : (
-              <>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-2xl font-bold">Stats</h3>
-                  <button
-                    onClick={closeStats}
-                    className="bg-white text-[#202124] px-3 py-1 rounded-md font-semibold"
-                  >
-                    Close
-                  </button>
+          <div className="bg-[#1a1a1c] text-white rounded-2xl p-6 w-full max-w-3xl mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-2xl font-bold">Stats</h3>
+              <button
+                onClick={() => setShowStats(false)}
+                className="bg-white text-[#202124] px-3 py-1 rounded-md font-semibold"
+              >
+                Close
+              </button>
+            </div>
+            <div className="max-h-[60vh] overflow-auto space-y-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-[#1a1a1c]">
+              {itemsState.map((it, idx) => (
+                <div
+                  key={idx}
+                  className="p-2 rounded-md flex justify-between bg-[#1c1c1e]"
+                >
+                  <div>{it.term}</div>
+                  <div className="flex space-x-4 text-sm">
+                    <span>✅: {it.correct}</span>
+                    <span>❌: {it.wrong}</span>
+                  </div>
                 </div>
-                <div className="max-h-[60vh] overflow-auto space-y-2">
-                  {itemsState.map((it, idx) => (
-                    <div
-                      key={idx}
-                      className="p-2 rounded-md flex justify-between bg-[#1c1c1e]"
-                    >
-                      <div>{it.term}</div>
-                      <div className="flex space-x-4 text-sm">
-                        <span>✅: {it.correct}</span>
-                        <span>❌: {it.wrong}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
+              ))}
+            </div>
           </div>
         </div>
       )}
