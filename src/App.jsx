@@ -35,15 +35,6 @@ export default function App() {
     return state.length - 1;
   };
 
-  const getNextIndex = (state, lastIndex) => {
-    if (remainingThisRound.length > 0) {
-      const nextIdx = remainingThisRound[0];
-      setRemainingThisRound((prev) => prev.slice(1));
-      return nextIdx;
-    }
-    return pickWeightedIndex(state, lastIndex);
-  };
-
   const handleSelect = () => {
     if (!selectedList) return;
     setStage("loading");
@@ -86,18 +77,47 @@ export default function App() {
   };
 
   const moveToNext = () => {
-    setDoneCount((c) => c + 1);
-    setCurrentIndex(getNextIndex(itemsState, currentIndex));
-    setAttempts(0);
-    setForced(false);
-    setInput("");
+    setRemainingThisRound((prev) => {
+      if (prev.length > 0) {
+        const [next, ...rest] = prev;
+        setCurrentIndex(next);
+        setDoneCount((c) => c + 1);
+        setAttempts(0);
+        setForced(false);
+        setInput("");
+        return rest;
+      } else {
+        const next = pickWeightedIndex(itemsState, currentIndex);
+        setCurrentIndex(next);
+        setDoneCount((c) => c + 1);
+        setAttempts(0);
+        setForced(false);
+        setInput("");
+        return prev;
+      }
+    });
   };
 
   const handleSubmit = () => {
     const cmd = input.trim().toLowerCase();
-    if (cmd === "://list") { setShowStats(true); setInput(""); setFeedback(""); return; }
-    if (cmd === "://light") { setTheme("light"); setInput(""); setFeedback("Switched to light mode"); return; }
-    if (cmd === "://dark") { setTheme("dark"); setInput(""); setFeedback("Switched to dark mode"); return; }
+    if (cmd === "://list") {
+      setShowStats(true);
+      setInput("");
+      setFeedback("");
+      return;
+    }
+    if (cmd === "://light") {
+      setTheme("light");
+      setInput("");
+      setFeedback("Switched to light mode");
+      return;
+    }
+    if (cmd === "://dark") {
+      setTheme("dark");
+      setInput("");
+      setFeedback("Switched to dark mode");
+      return;
+    }
 
     if (currentIndex === null) return;
     const current = itemsState[currentIndex];
@@ -182,7 +202,7 @@ export default function App() {
     <div className="flex flex-col justify-center min-h-screen w-full space-y-6 px-6 text-center" style={{ backgroundColor: bgColor, color: textColor }}>
       <div className="flex flex-col justify-center items-center h-full">
         <h2 className="text-3xl font-bold mb-2">{current.term}</h2>
-        <p className="text-sm mb-4">Done {doneCount} / {itemsState.length}</p>
+        <p className="text-sm mb-4">Questions Completed: {doneCount}</p>
         <input
           className="rounded-2xl px-4 py-3 w-full max-w-xl text-center text-xl focus:outline-none"
           value={input}
@@ -214,7 +234,7 @@ export default function App() {
                 Close
               </button>
             </div>
-            <div className="text-sm mb-2">Done {doneCount} / {itemsState.length}</div>
+            <div className="text-sm mb-2">Questions Completed: {doneCount} / {itemsState.length}</div>
             <div className="max-h-[60vh] overflow-auto space-y-2">
               {itemsState.map((it, idx) => (
                 <div
