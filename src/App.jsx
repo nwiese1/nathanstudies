@@ -25,7 +25,6 @@ export default function App() {
       r -= state[i].weight ?? 1;
       if (r <= 0) {
         if (state.length > 1 && i === avoidIndex) {
-          // try once to avoid immediate repeat
           const alt = (i + 1) % state.length;
           return alt;
         }
@@ -81,43 +80,39 @@ export default function App() {
       setAttempts(0);
       setForced(false);
       setInput("");
-      // Decrease weight slightly so it's shown less frequently
       updateItemWeight(currentIndex, -1);
-      // pick next
       const next = moveToNext(itemsState, currentIndex);
       setCurrentIndex(next);
-    } else {
-      if (forced) {
-        // forced mode: must type the correct answer (case-insensitive)
-        if (user.toLowerCase() === answer.toLowerCase()) {
-          setFeedback("✅ Correct!");
-          setAttempts(0);
-          setForced(false);
-          setInput("");
-          // They typed it correctly now -> reduce weight
-          updateItemWeight(currentIndex, -1);
-          const next = moveToNext(itemsState, currentIndex);
-          setCurrentIndex(next);
-        } else {
-          setFeedback("You must type the correct answer!");
-          setInput("");
-          // do not change weight here; it already increased when they first failed
-        }
+      return;
+    }
+
+    if (forced) {
+      if (user.toLowerCase() === answer.toLowerCase()) {
+        setFeedback("✅ Correct!");
+        setAttempts(0);
+        setForced(false);
+        setInput("");
+        updateItemWeight(currentIndex, -1);
+        const next = moveToNext(itemsState, currentIndex);
+        setCurrentIndex(next);
       } else {
-        // normal attempts
-        if (attempts + 1 >= 2) {
-          // reveal the answer and enter forced mode; increase weight so it shows up more
-          setFeedback(`❌ Incorrect, the answer was "${answer}".`);
-          setForced(true);
-          setAttempts(0);
-          setInput("");
-          updateItemWeight(currentIndex, 2); // increase frequency for items you miss
-        } else {
-          setFeedback("Wrong, try again!");
-          setAttempts((a) => a + 1);
-          setInput("");
-        }
+        setFeedback("You must type the correct answer!");
+        setInput("");
       }
+      return;
+    }
+
+    // not forced and incorrect
+    if (attempts + 1 >= 2) {
+      setFeedback(`❌ Incorrect, the answer was "${answer}".`);
+      setForced(true);
+      setAttempts(0);
+      setInput("");
+      updateItemWeight(currentIndex, 2);
+    } else {
+      setFeedback("Wrong, try again!");
+      setAttempts((a) => a + 1);
+      setInput("");
     }
   };
 
