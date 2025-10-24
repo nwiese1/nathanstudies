@@ -5,7 +5,7 @@ export default function App() {
   const [selectedList, setSelectedList] = useState("");
   const [itemsState, setItemsState] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(null);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState("\u200B");
   const [attempts, setAttempts] = useState(0);
   const [forced, setForced] = useState(false);
   const [feedback, setFeedback] = useState("");
@@ -62,7 +62,7 @@ export default function App() {
       setStage("study");
       setAttempts(0);
       setForced(false);
-      setInput("");
+      setInput("\u200B");
       setFeedback("");
     }, 600);
   };
@@ -84,23 +84,23 @@ export default function App() {
   };
 
   const handleSubmit = () => {
-    const cmd = input.trim().toLowerCase();
+    const cmd = input.replace(/\u200B/g, "").trim().toLowerCase();
     if (cmd === "://list") {
       setShowStats(true);
-      setInput("");
+      setInput("\u200B");
       setFeedback("");
       return;
     }
     if (cmd === "://light") {
       setTheme("light");
-      setInput("");
-      setFeedback("Switched To Light Mode");
+      setInput("\u200B");
+      setFeedback("Switched to light mode");
       return;
     }
     if (cmd === "://dark") {
       setTheme("dark");
-      setInput("");
-      setFeedback("Switched To Dark Mode");
+      setInput("\u200B");
+      setFeedback("Switched to dark mode");
       return;
     }
 
@@ -109,7 +109,7 @@ export default function App() {
     if (!current) return;
 
     const answer = current.def;
-    const user = input.trim();
+    const user = input.replace(/\u200B/g, "").trim();
 
     if (user === "" && !forced) {
       const prevFeedback = `❌ Incorrect, the answer was "${answer}".`;
@@ -117,7 +117,7 @@ export default function App() {
       updateItem(currentIndex, { wrong: 1, weight: 2 });
       setForced(true);
       setAttempts(0);
-      setInput("");
+      setInput("\u200B");
       return;
     }
 
@@ -128,7 +128,7 @@ export default function App() {
       if (!forced) updateItem(currentIndex, { correct: 1, weight: -1 });
       setAttempts(0);
       setForced(false);
-      setInput("");
+      setInput("\u200B");
       setCurrentIndex(getNextIndex(itemsState, currentIndex));
       return;
     }
@@ -136,7 +136,7 @@ export default function App() {
     if (forced) {
       const prevFeedback = `❌ Incorrect, the answer was "${answer}".`;
       setFeedback("You must type the correct answer!");
-      setInput("");
+      setInput("\u200B");
       setTimeout(() => setFeedback(prevFeedback), 2000);
       return;
     }
@@ -146,12 +146,12 @@ export default function App() {
       setFeedback(prevFeedback);
       setForced(true);
       setAttempts(0);
-      setInput("");
+      setInput("\u200B");
       updateItem(currentIndex, { wrong: 1, weight: 2 });
     } else {
       setFeedback("Wrong, try again!");
       setAttempts((a) => a + 1);
-      setInput("");
+      setInput("\u200B");
     }
   };
 
