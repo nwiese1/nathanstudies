@@ -111,11 +111,13 @@ export default function App() {
     const answer = current.def;
     const user = input.trim();
 
-    if (user === "") {
+    if (user === "" && !forced) {
+      const prevFeedback = `❌ Incorrect, the answer was "${answer}".`;
+      setFeedback(prevFeedback);
+      updateItem(currentIndex, { wrong: 1, weight: 2 });
       setForced(true);
       setAttempts(0);
       setInput("");
-      setFeedback("You must type the correct answer!");
       return;
     }
 
@@ -140,7 +142,8 @@ export default function App() {
     }
 
     if (attempts + 1 >= 2) {
-      setFeedback(`❌ Incorrect, the answer was "${answer}".`);
+      const prevFeedback = `❌ Incorrect, the answer was "${answer}".`;
+      setFeedback(prevFeedback);
       setForced(true);
       setAttempts(0);
       setInput("");
@@ -152,13 +155,13 @@ export default function App() {
     }
   };
 
-  const bgColor = theme === "dark" ? "#202124" : "#fdfdfd";
+  const bgColor = theme === "dark" ? "#202124" : "#f0f0e8";
   const textColor = theme === "dark" ? "#fff" : "#202124";
-  const inputBg = theme === "dark" ? "#2c2d2f" : "#eee";
+  const inputBg = theme === "dark" ? "#2c2d2f" : "#e2e0d6";
 
   if (stage === "select")
     return (
-      <div className={`flex flex-col items-center justify-center min-h-screen space-y-6 px-4`} style={{ backgroundColor: bgColor, color: textColor }}>
+      <div className="flex flex-col items-center justify-center min-h-screen space-y-6 px-4" style={{ backgroundColor: bgColor, color: textColor }}>
         <h1 className="text-4xl font-bold">Choose List To Study</h1>
         <select
           className="rounded-2xl px-4 py-3 w-full max-w-lg text-xl"
@@ -213,8 +216,8 @@ export default function App() {
       </div>
 
       {showStats && (
-        <div className="fixed inset-0 flex items-center justify-center" style={{ backgroundColor: theme === "dark" ? "rgba(32,33,36,0.95)" : "rgba(255,255,255,0.95)" }}>
-          <div style={{ backgroundColor: theme === "dark" ? "#1a1a1c" : "#f4f4f4", color: textColor }} className="rounded-2xl p-6 w-full max-w-3xl mx-4">
+        <div className="fixed inset-0 flex items-center justify-center" style={{ backgroundColor: theme === "dark" ? "rgba(32,33,36,0.95)" : "rgba(240,240,232,0.95)" }}>
+          <div style={{ backgroundColor: theme === "dark" ? "#1a1a1c" : "#f7f6f0", color: textColor }} className="rounded-2xl p-6 w-full max-w-3xl mx-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-2xl font-bold">Stats</h3>
               <button
@@ -230,7 +233,7 @@ export default function App() {
                 <div
                   key={idx}
                   className="p-2 rounded-md flex justify-between"
-                  style={{ backgroundColor: theme === "dark" ? "#1c1c1e" : "#e0e0e0" }}
+                  style={{ backgroundColor: theme === "dark" ? "#1c1c1e" : "#e0e0d6" }}
                 >
                   <div>{it.term}</div>
                   <div className="flex space-x-4 text-sm">
