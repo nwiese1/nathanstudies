@@ -3,14 +3,15 @@ import { lists } from "./data";
 
 export default function App() {
   const [selectedList, setSelectedList] = useState("");
-  const [itemsState, setItemsState] = useState([]); // { term, def, weight }
+  const [itemsState, setItemsState] = useState([]); // { term, def, weight, firstCorrect, secondCorrect, wrong }
   const [currentIndex, setCurrentIndex] = useState(null);
   const [input, setInput] = useState("");
   const [attempts, setAttempts] = useState(0);
   const [forced, setForced] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [stage, setStage] = useState("select");
-
+  const [showStats, setShowStats] = useState(false);
+  
   useEffect(() => {
     document.title = selectedList || "NathanStudies";
   }, [selectedList]);
@@ -24,10 +25,7 @@ export default function App() {
     for (let i = 0; i < state.length; i++) {
       r -= state[i].weight ?? 1;
       if (r <= 0) {
-        if (state.length > 1 && i === avoidIndex) {
-          const alt = (i + 1) % state.length;
-          return alt;
-        }
+        if (state.length > 1 && i === avoidIndex) return (i + 1) % state.length;
         return i;
       }
     }
@@ -39,35 +37,58 @@ export default function App() {
     setStage("loading");
     setTimeout(() => {
       const raw = lists[selectedList] || [];
-      const initial = raw.map(([t, d]) => ({ term: t, def: d, weight: 1 }));
-      setItemsState(shuffleArray(initial));
-      const idx = pickWeightedIndex(initial);
-      setCurrentIndex(idx);
+      const initial = raw.map(([t, d]) => ({
+        term: t,
+        def: d,
+        weight: 1,
+        firstCorrect: 0,
+        secondCorrect: 0,
+        wrong: 0,
+      }));
+      const shuffled = shuffleArray(initial);
+      setItemsState(shuffled);
+      setCurrentIndex(pickWeightedIndex(shuffled));
       setStage("study");
       setAttempts(0);
       setForced(false);
       setInput("");
-      setFeedback("");
+      setFeedback(" ");
     }, 600);
   };
 
   const moveToNext = (state, lastIndex) => {
     if (!state || state.length === 0) return null;
-    const next = pickWeightedIndex(state, lastIndex);
-    return next;
+    return pickWeightedIndex(state, lastIndex);
   };
 
-  const updateItemWeight = (index, delta) => {
+  const updateItem = (index, change) => {
     setItemsState((prev) => {
       const copy = prev.map((it) => ({ ...it }));
       if (copy[index]) {
-        copy[index].weight = Math.max(1, (copy[index].weight ?? 1) + delta);
+        Object.keys(change).forEach((k) => {
+          if (k === "weight") {
+            copy[index].weight = Math.max(1, (copy[index].weight ?? 1) + change[k]);
+          } else {
+            copy[index][k] = (copy[index][k] ?? 0) + change[k];
+          }
+        });
       }
       return copy;
     });
   };
 
+  const openStats = () => {
+    setShowStats(true);
+    setInput("");
+    setFeedback("");
+  };
+
   const handleSubmit = () => {
+    if (input.trim() === "://list") {
+      openStats();
+      return;
+    }
+
     if (currentIndex === null) return;
     const current = itemsState[currentIndex];
     if (!current) return;
@@ -77,38 +98,29 @@ export default function App() {
 
     if (isCorrect) {
       setFeedback("✅ Correct!");
+      if (attempts === 0) updateItem(currentIndex, { firstCorrect: 1, weight: -1 });
+      else if (attempts === 1) updateItem(currentIndex, { secondCorrect: 1, weight: -1 });
       setAttempts(0);
       setForced(false);
       setInput("");
-      updateItemWeight(currentIndex, -1);
-      const next = moveToNext(itemsState, currentIndex);
-      setCurrentIndex(next);
+      setCurrentIndex(moveToNext(itemsState, currentIndex));
       return;
     }
 
     if (forced) {
-      if (user.toLowerCase() === answer.toLowerCase()) {
-        setFeedback("✅ Correct!");
-        setAttempts(0);
-        setForced(false);
-        setInput("");
-        updateItemWeight(currentIndex, -1);
-        const next = moveToNext(itemsState, currentIndex);
-        setCurrentIndex(next);
-      } else {
-        setFeedback("You must type the correct answer!");
-        setInput("");
-      }
+      const prevFeedback = `❌ Incorrect, the answer was "${answer}".`;
+      setFeedback("You must type the correct answer!");
+      setInput("");
+      setTimeout(() => setFeedback(prevFeedback), 2000);
       return;
     }
 
-    // not forced and incorrect
     if (attempts + 1 >= 2) {
       setFeedback(`❌ Incorrect, the answer was "${answer}".`);
       setForced(true);
       setAttempts(0);
       setInput("");
-      updateItemWeight(currentIndex, 2);
+      updateItem(currentIndex, { wrong: 1, weight: 2 });
     } else {
       setFeedback("Wrong, try again!");
       setAttempts((a) => a + 1);
@@ -167,6 +179,37 @@ export default function App() {
         </button>
         {feedback && <p className="text-xl mt-4">{feedback}</p>}
       </div>
+
+      {showStats && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50">
+          <div className="bg-[#1f1f21] text-white rounded-2xl p-6 w-full max-w-3xl mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-2xl font-bold">Stats</h3>
+              <button
+                onClick={() => setShowStats(false)}
+                className="bg-white text-[#202124] px-3 py-1 rounded-md font-semibold"
+              >
+                Close
+              </button>
+            </div>
+            <div className="max-h-[60vh] overflow-auto">
+              {itemsState.map((it, idx) => (
+                <div
+                  key={idx}
+                  className="p-2 mb-1 rounded-md bg-[#2a2a2c] flex justify-between"
+                >
+                  <div>{it.term}</div>
+                  <div className="flex space-x-2 text-sm">
+                    <span>✅1st: {it.firstCorrect}</span>
+                    <span>✅2nd: {it.secondCorrect}</span>
+                    <span>❌: {it.wrong}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
