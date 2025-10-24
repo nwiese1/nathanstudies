@@ -3,9 +3,8 @@ import { lists } from "./data";
 
 export default function App() {
   const [selectedList, setSelectedList] = useState("");
-  const [studyItems, setStudyItems] = useState([]);
-  const [queue, setQueue] = useState([]);
-  const [index, setIndex] = useState(0);
+  const [itemsState, setItemsState] = useState([]); // { term, def, weight }
+  const [currentIndex, setCurrentIndex] = useState(null);
   const [input, setInput] = useState("");
   const [attempts, setAttempts] = useState(0);
   const [forced, setForced] = useState(false);
@@ -16,68 +15,108 @@ export default function App() {
     document.title = selectedList || "NathanStudies";
   }, [selectedList]);
 
-  const shuffle = (arr) => arr.sort(() => Math.random() - 0.5);
+  const shuffleArray = (arr) => arr.sort(() => Math.random() - 0.5);
+
+  const pickWeightedIndex = (state, avoidIndex = null) => {
+    if (!state || state.length === 0) return null;
+    const total = state.reduce((s, it) => s + (it.weight ?? 1), 0);
+    let r = Math.random() * total;
+    for (let i = 0; i < state.length; i++) {
+      r -= state[i].weight ?? 1;
+      if (r <= 0) {
+        if (state.length > 1 && i === avoidIndex) {
+          // try once to avoid immediate repeat
+          const alt = (i + 1) % state.length;
+          return alt;
+        }
+        return i;
+      }
+    }
+    return state.length - 1;
+  };
 
   const handleSelect = () => {
     if (!selectedList) return;
     setStage("loading");
     setTimeout(() => {
-      const items = lists[selectedList];
-      setStudyItems(items);
-      setQueue(shuffle([...items]));
+      const raw = lists[selectedList] || [];
+      const initial = raw.map(([t, d]) => ({ term: t, def: d, weight: 1 }));
+      setItemsState(shuffleArray(initial));
+      const idx = pickWeightedIndex(initial);
+      setCurrentIndex(idx);
       setStage("study");
-    }, 1000);
+      setAttempts(0);
+      setForced(false);
+      setInput("");
+      setFeedback("");
+    }, 600);
   };
 
-  const current = queue[index];
+  const moveToNext = (state, lastIndex) => {
+    if (!state || state.length === 0) return null;
+    const next = pickWeightedIndex(state, lastIndex);
+    return next;
+  };
+
+  const updateItemWeight = (index, delta) => {
+    setItemsState((prev) => {
+      const copy = prev.map((it) => ({ ...it }));
+      if (copy[index]) {
+        copy[index].weight = Math.max(1, (copy[index].weight ?? 1) + delta);
+      }
+      return copy;
+    });
+  };
 
   const handleSubmit = () => {
+    if (currentIndex === null) return;
+    const current = itemsState[currentIndex];
     if (!current) return;
-    const correct = input.trim().toLowerCase() === current[1].toLowerCase();
+    const answer = current.def;
+    const user = input.trim();
+    const isCorrect = user.toLowerCase() === answer.toLowerCase();
 
-    if (correct) {
+    if (isCorrect) {
       setFeedback("✅ Correct!");
       setAttempts(0);
       setForced(false);
       setInput("");
-      const newQueue = [...queue];
-      newQueue.splice(index, 1);
-      if (newQueue.length === 0) {
-        setQueue(shuffle([...studyItems]));
-        setIndex(0);
-      } else {
-        setQueue(newQueue);
-        setIndex(index % newQueue.length);
-      }
+      // Decrease weight slightly so it's shown less frequently
+      updateItemWeight(currentIndex, -1);
+      // pick next
+      const next = moveToNext(itemsState, currentIndex);
+      setCurrentIndex(next);
     } else {
       if (forced) {
-        if (input.trim() === current[1]) {
+        // forced mode: must type the correct answer (case-insensitive)
+        if (user.toLowerCase() === answer.toLowerCase()) {
           setFeedback("✅ Correct!");
           setAttempts(0);
           setForced(false);
           setInput("");
-          const newQueue = [...queue];
-          newQueue.splice(index, 1);
-          if (newQueue.length === 0) {
-            setQueue(shuffle([...studyItems]));
-            setIndex(0);
-          } else {
-            setQueue(newQueue);
-            setIndex(index % newQueue.length);
-          }
+          // They typed it correctly now -> reduce weight
+          updateItemWeight(currentIndex, -1);
+          const next = moveToNext(itemsState, currentIndex);
+          setCurrentIndex(next);
         } else {
-          setFeedback(`❌ Incorrect, the answer was "${current[1]}".`);
+          setFeedback("You must type the correct answer!");
           setInput("");
+          // do not change weight here; it already increased when they first failed
         }
       } else {
+        // normal attempts
         if (attempts + 1 >= 2) {
-          setFeedback(`❌ Incorrect, the answer was "${current[1]}".`);
+          // reveal the answer and enter forced mode; increase weight so it shows up more
+          setFeedback(`❌ Incorrect, the answer was "${answer}".`);
           setForced(true);
+          setAttempts(0);
+          setInput("");
+          updateItemWeight(currentIndex, 2); // increase frequency for items you miss
         } else {
           setFeedback("Wrong, try again!");
-          setAttempts(attempts + 1);
+          setAttempts((a) => a + 1);
+          setInput("");
         }
-        setInput("");
       }
     }
   };
@@ -112,10 +151,12 @@ export default function App() {
       </div>
     );
 
+  const current = itemsState[currentIndex] ?? { term: "", def: "" };
+
   return (
     <div className="flex flex-col justify-center min-h-screen w-full space-y-6 px-6 text-center">
       <div className="flex flex-col justify-center items-center h-full">
-        <h2 className="text-3xl font-bold mb-6">{current[0]}</h2>
+        <h2 className="text-3xl font-bold mb-6">{current.term}</h2>
         <input
           className="bg-[#2c2d2f] rounded-2xl px-4 py-3 w-full max-w-xl text-center text-xl focus:outline-none"
           value={input}
@@ -130,9 +171,6 @@ export default function App() {
           Submit
         </button>
         {feedback && <p className="text-xl mt-4">{feedback}</p>}
-        <p className="text-lg opacity-70 mt-2">
-          {studyItems.length - queue.length} Mastered / {studyItems.length} Total
-        </p>
       </div>
     </div>
   );
