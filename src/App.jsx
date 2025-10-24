@@ -5,10 +5,10 @@ export default function App() {
   const [selectedList, setSelectedList] = useState("");
   const [itemsState, setItemsState] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(null);
-  const [input, setInput] = useState("\u200B");
+  const [input, setInput] = useState("");
   const [attempts, setAttempts] = useState(0);
   const [forced, setForced] = useState(false);
-  const [feedback, setFeedback] = useState("");
+  const [feedback, setFeedback] = useState("❕ Enter a response to begin.");
   const [stage, setStage] = useState("select");
   const [showStats, setShowStats] = useState(false);
   const [remainingThisRound, setRemainingThisRound] = useState([]);
@@ -62,8 +62,8 @@ export default function App() {
       setStage("study");
       setAttempts(0);
       setForced(false);
-      setInput("\u200B");
-      setFeedback("");
+      setInput("");
+      setFeedback("❕ Enter a response to begin.");
     }, 600);
   };
 
@@ -84,22 +84,22 @@ export default function App() {
   };
 
   const handleSubmit = () => {
-    const cmd = input.replace(/\u200B/g, "").trim().toLowerCase();
+    const cmd = input.trim().toLowerCase();
     if (cmd === "://list") {
       setShowStats(true);
-      setInput("\u200B");
+      setInput("");
       setFeedback("");
       return;
     }
     if (cmd === "://light") {
       setTheme("light");
-      setInput("\u200B");
+      setInput("");
       setFeedback("Switched to light mode");
       return;
     }
     if (cmd === "://dark") {
       setTheme("dark");
-      setInput("\u200B");
+      setInput("");
       setFeedback("Switched to dark mode");
       return;
     }
@@ -109,7 +109,7 @@ export default function App() {
     if (!current) return;
 
     const answer = current.def;
-    const user = input.replace(/\u200B/g, "").trim();
+    const user = input.trim();
 
     if (user === "" && !forced) {
       const prevFeedback = `❌ Incorrect, the answer was "${answer}".`;
@@ -117,7 +117,7 @@ export default function App() {
       updateItem(currentIndex, { wrong: 1, weight: 2 });
       setForced(true);
       setAttempts(0);
-      setInput("\u200B");
+      setInput("");
       return;
     }
 
@@ -128,7 +128,7 @@ export default function App() {
       if (!forced) updateItem(currentIndex, { correct: 1, weight: -1 });
       setAttempts(0);
       setForced(false);
-      setInput("\u200B");
+      setInput("");
       setCurrentIndex(getNextIndex(itemsState, currentIndex));
       return;
     }
@@ -136,7 +136,7 @@ export default function App() {
     if (forced) {
       const prevFeedback = `❌ Incorrect, the answer was "${answer}".`;
       setFeedback("You must type the correct answer!");
-      setInput("\u200B");
+      setInput("");
       setTimeout(() => setFeedback(prevFeedback), 2000);
       return;
     }
@@ -146,12 +146,12 @@ export default function App() {
       setFeedback(prevFeedback);
       setForced(true);
       setAttempts(0);
-      setInput("\u200B");
+      setInput("");
       updateItem(currentIndex, { wrong: 1, weight: 2 });
     } else {
       setFeedback("Wrong, try again!");
       setAttempts((a) => a + 1);
-      setInput("\u200B");
+      setInput("");
     }
   };
 
