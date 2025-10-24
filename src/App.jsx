@@ -6,6 +6,7 @@ export default function App() {
   const [itemsState, setItemsState] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(null);
   const [input, setInput] = useState("");
+  const [startedTyping, setStartedTyping] = useState(false);
   const [attempts, setAttempts] = useState(0);
   const [forced, setForced] = useState(false);
   const [feedback, setFeedback] = useState("❕ Enter a response to begin.");
@@ -63,6 +64,7 @@ export default function App() {
       setAttempts(0);
       setForced(false);
       setInput("");
+      setStartedTyping(false);
       setFeedback("❕ Enter a response to begin.");
     }, 600);
   };
@@ -88,18 +90,21 @@ export default function App() {
     if (cmd === "://list") {
       setShowStats(true);
       setInput("");
+      setStartedTyping(false);
       setFeedback("");
       return;
     }
     if (cmd === "://light") {
       setTheme("light");
       setInput("");
+      setStartedTyping(false);
       setFeedback("Switched to light mode");
       return;
     }
     if (cmd === "://dark") {
       setTheme("dark");
       setInput("");
+      setStartedTyping(false);
       setFeedback("Switched to dark mode");
       return;
     }
@@ -111,14 +116,17 @@ export default function App() {
     const answer = current.def;
     const user = input.trim();
 
-    if (user === "" && !forced) {
-      const prevFeedback = `❌ Incorrect, the answer was "${answer}".`;
-      setFeedback(prevFeedback);
-      updateItem(currentIndex, { wrong: 1, weight: 2 });
-      setForced(true);
-      setAttempts(0);
-      setInput("");
-      return;
+    if (!startedTyping) {
+      setStartedTyping(true);
+      if (user === "") {
+        const prevFeedback = `❌ Incorrect, the answer was "${answer}".`;
+        setFeedback(prevFeedback);
+        updateItem(currentIndex, { wrong: 1, weight: 2 });
+        setForced(true);
+        setAttempts(0);
+        setInput("");
+        return;
+      }
     }
 
     const isCorrect = user.toLowerCase() === answer.toLowerCase();
@@ -129,6 +137,7 @@ export default function App() {
       setAttempts(0);
       setForced(false);
       setInput("");
+      setStartedTyping(false);
       setCurrentIndex(getNextIndex(itemsState, currentIndex));
       return;
     }
@@ -137,6 +146,7 @@ export default function App() {
       const prevFeedback = `❌ Incorrect, the answer was "${answer}".`;
       setFeedback("You must type the correct answer!");
       setInput("");
+      setStartedTyping(false);
       setTimeout(() => setFeedback(prevFeedback), 2000);
       return;
     }
@@ -147,11 +157,13 @@ export default function App() {
       setForced(true);
       setAttempts(0);
       setInput("");
+      setStartedTyping(false);
       updateItem(currentIndex, { wrong: 1, weight: 2 });
     } else {
       setFeedback("Wrong, try again!");
       setAttempts((a) => a + 1);
       setInput("");
+      setStartedTyping(false);
     }
   };
 
