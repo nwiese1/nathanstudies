@@ -54,10 +54,10 @@ export default function App() {
         correct: 0,
         wrong: 0,
       }));
-      const shuffled = shuffleArray(initial);
+      const shuffled = shuffleArray([...initial]);
       setItemsState(shuffled);
-      setRemainingThisRound(shuffled.map((_, i) => i));
-      setCurrentIndex(shuffled.length > 0 ? 0 : null);
+      setRemainingThisRound(shuffled.map((_, i) => i).slice(1));
+      setCurrentIndex(0);
       setStage("study");
       setAttempts(0);
       setForced(false);
@@ -113,7 +113,8 @@ export default function App() {
       setAttempts(0);
       setForced(false);
       setInput("");
-      setCurrentIndex(getNextIndex(itemsState, currentIndex));
+      const next = getNextIndex(itemsState, currentIndex);
+      setTimeout(() => setCurrentIndex(next), 300);
       return;
     }
 
@@ -121,7 +122,12 @@ export default function App() {
       const prevFeedback = `❌ Incorrect, the answer was "${answer}".`;
       setFeedback("You must type the correct answer!");
       setInput("");
-      setTimeout(() => setFeedback(prevFeedback), 2000);
+      setTimeout(() => {
+        setFeedback(prevFeedback);
+        const next = getNextIndex(itemsState, currentIndex);
+        setCurrentIndex(next);
+        setForced(false);
+      }, 2000);
       return;
     }
 
