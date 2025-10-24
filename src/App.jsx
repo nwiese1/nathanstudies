@@ -94,13 +94,13 @@ export default function App() {
     if (cmd === "://light") {
       setTheme("light");
       setInput("");
-      setFeedback("Switched to light mode");
+      setFeedback("Switched To Light Mode");
       return;
     }
     if (cmd === "://dark") {
       setTheme("dark");
       setInput("");
-      setFeedback("Switched to dark mode");
+      setFeedback("Switched To Dark Mode");
       return;
     }
 
