@@ -3,7 +3,7 @@ import { lists } from "./data";
 
 export default function App() {
   const [selectedList, setSelectedList] = useState("");
-  const [itemsState, setItemsState] = useState([]); // { term, def, weight, firstCorrect, secondCorrect, wrong }
+  const [itemsState, setItemsState] = useState([]); // { term, def, weight, correct, wrong }
   const [currentIndex, setCurrentIndex] = useState(null);
   const [input, setInput] = useState("");
   const [attempts, setAttempts] = useState(0);
@@ -11,7 +11,8 @@ export default function App() {
   const [feedback, setFeedback] = useState("");
   const [stage, setStage] = useState("select");
   const [showStats, setShowStats] = useState(false);
-  
+  const [statsLoading, setStatsLoading] = useState(false);
+
   useEffect(() => {
     document.title = selectedList || "NathanStudies";
   }, [selectedList]);
@@ -41,8 +42,7 @@ export default function App() {
         term: t,
         def: d,
         weight: 1,
-        firstCorrect: 0,
-        secondCorrect: 0,
+        correct: 0,
         wrong: 0,
       }));
       const shuffled = shuffleArray(initial);
@@ -52,7 +52,7 @@ export default function App() {
       setAttempts(0);
       setForced(false);
       setInput("");
-      setFeedback(" ");
+      setFeedback("");
     }, 600);
   };
 
@@ -78,9 +78,19 @@ export default function App() {
   };
 
   const openStats = () => {
-    setShowStats(true);
-    setInput("");
-    setFeedback("");
+    setStatsLoading(true);
+    setTimeout(() => {
+      setShowStats(true);
+      setStatsLoading(false);
+    }, 2000);
+  };
+
+  const closeStats = () => {
+    setStatsLoading(true);
+    setTimeout(() => {
+      setShowStats(false);
+      setStatsLoading(false);
+    }, 2000);
   };
 
   const handleSubmit = () => {
@@ -98,8 +108,7 @@ export default function App() {
 
     if (isCorrect) {
       setFeedback("✅ Correct!");
-      if (attempts === 0) updateItem(currentIndex, { firstCorrect: 1, weight: -1 });
-      else if (attempts === 1) updateItem(currentIndex, { secondCorrect: 1, weight: -1 });
+      updateItem(currentIndex, { correct: 1, weight: -1 });
       setAttempts(0);
       setForced(false);
       setInput("");
@@ -181,32 +190,39 @@ export default function App() {
       </div>
 
       {showStats && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50">
-          <div className="bg-[#1f1f21] text-white rounded-2xl p-6 w-full max-w-3xl mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-2xl font-bold">Stats</h3>
-              <button
-                onClick={() => setShowStats(false)}
-                className="bg-white text-[#202124] px-3 py-1 rounded-md font-semibold"
-              >
-                Close
-              </button>
-            </div>
-            <div className="max-h-[60vh] overflow-auto">
-              {itemsState.map((it, idx) => (
-                <div
-                  key={idx}
-                  className="p-2 mb-1 rounded-md bg-[#2a2a2c] flex justify-between"
-                >
-                  <div>{it.term}</div>
-                  <div className="flex space-x-2 text-sm">
-                    <span>✅1st: {it.firstCorrect}</span>
-                    <span>✅2nd: {it.secondCorrect}</span>
-                    <span>❌: {it.wrong}</span>
-                  </div>
+        <div className="fixed inset-0 flex items-center justify-center bg-[#202124]/95">
+          <div className="bg-[#202124] text-white rounded-2xl p-6 w-full max-w-3xl mx-4">
+            {statsLoading ? (
+              <div className="flex items-center justify-center h-32 text-2xl animate-pulse">
+                Loading stats...
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-2xl font-bold">Stats</h3>
+                  <button
+                    onClick={closeStats}
+                    className="bg-white text-[#202124] px-3 py-1 rounded-md font-semibold"
+                  >
+                    Close
+                  </button>
                 </div>
-              ))}
-            </div>
+                <div className="max-h-[60vh] overflow-auto space-y-2">
+                  {itemsState.map((it, idx) => (
+                    <div
+                      key={idx}
+                      className="p-2 rounded-md flex justify-between bg-[#202124]/90 border border-gray-700"
+                    >
+                      <div>{it.term}</div>
+                      <div className="flex space-x-4 text-sm">
+                        <span>✅: {it.correct}</span>
+                        <span>❌: {it.wrong}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
