@@ -13,6 +13,7 @@ export default function App() {
   const [showStats, setShowStats] = useState(false);
   const [remainingThisRound, setRemainingThisRound] = useState([]);
   const [theme, setTheme] = useState("dark");
+  const [doneCount, setDoneCount] = useState(0);
 
   useEffect(() => {
     document.title = selectedList || "NathanStudies";
@@ -64,6 +65,7 @@ export default function App() {
       setForced(false);
       setInput("");
       setFeedback("❕ Enter a response to begin.");
+      setDoneCount(0);
     }, 600);
   };
 
@@ -84,6 +86,7 @@ export default function App() {
   };
 
   const moveToNext = () => {
+    setDoneCount((c) => c + 1);
     setCurrentIndex(getNextIndex(itemsState, currentIndex));
     setAttempts(0);
     setForced(false);
@@ -178,7 +181,8 @@ export default function App() {
   return (
     <div className="flex flex-col justify-center min-h-screen w-full space-y-6 px-6 text-center" style={{ backgroundColor: bgColor, color: textColor }}>
       <div className="flex flex-col justify-center items-center h-full">
-        <h2 className="text-3xl font-bold mb-6">{current.term}</h2>
+        <h2 className="text-3xl font-bold mb-2">{current.term}</h2>
+        <p className="text-sm mb-4">Done {doneCount} / {itemsState.length}</p>
         <input
           className="rounded-2xl px-4 py-3 w-full max-w-xl text-center text-xl focus:outline-none"
           value={input}
@@ -210,6 +214,7 @@ export default function App() {
                 Close
               </button>
             </div>
+            <div className="text-sm mb-2">Done {doneCount} / {itemsState.length}</div>
             <div className="max-h-[60vh] overflow-auto space-y-2">
               {itemsState.map((it, idx) => (
                 <div
