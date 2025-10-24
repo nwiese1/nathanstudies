@@ -30,8 +30,7 @@ export default function App() {
     for (let i = 0; i < state.length; i++) {
       r -= state[i].weight ?? 1;
       if (r <= 0) {
-        if (state.length > 1 && i === avoidIndex)
-          return (i + 1) % state.length;
+        if (state.length > 1 && i === avoidIndex) return (i + 1) % state.length;
         return i;
       }
     }
@@ -52,9 +51,8 @@ export default function App() {
       }));
       const shuffled = shuffleArray(initial);
       setItemsState(shuffled);
-      const order = shuffled.map((_, i) => i);
-      setRemainingThisRound(order);
-      setCurrentIndex(order[0]);
+      setRemainingThisRound(shuffled.map((_, i) => i));
+      setCurrentIndex(0);
       setStage("study");
       setAttempts(0);
       setForced(false);
@@ -68,14 +66,11 @@ export default function App() {
 
   const updateItem = (index, change) => {
     setItemsState((prev) => {
-      const copy = [...prev];
+      const copy = prev.map((it) => ({ ...it }));
       if (copy[index]) {
         Object.keys(change).forEach((k) => {
           if (k === "weight") {
-            copy[index].weight = Math.max(
-              1,
-              (copy[index].weight ?? 1) + change[k]
-            );
+            copy[index].weight = Math.max(1, (copy[index].weight ?? 1) + change[k]);
           } else {
             copy[index][k] = (copy[index][k] ?? 0) + change[k];
           }
@@ -89,27 +84,27 @@ export default function App() {
     setLocked(true);
     setTimeout(() => {
       setRemainingThisRound((prev) => {
-        let nextIndex = null;
-        let newRemaining = [];
-
-        if (prev.length > 1) {
-          newRemaining = prev.slice(1);
-          nextIndex = prev[1];
+        if (prev.length > 0) {
+          const [next, ...rest] = prev;
+          setCurrentIndex(next);
+          setTriedCount((c) => c + 1);
+          setAttempts(0);
+          setForced(false);
+          setInput("");
+          setFeedback("");
+          setLocked(false);
+          return rest;
         } else {
-          const weightedNext = pickWeightedIndex(itemsState, currentIndex);
-          nextIndex = weightedNext;
-          newRemaining = [];
+          const next = pickWeightedIndex(itemsState, currentIndex);
+          setCurrentIndex(next);
+          setTriedCount((c) => c + 1);
+          setAttempts(0);
+          setForced(false);
+          setInput("");
+          setFeedback("");
+          setLocked(false);
+          return prev;
         }
-
-        setCurrentIndex(nextIndex);
-        setTriedCount((c) => c + 1);
-        setAttempts(0);
-        setForced(false);
-        setInput("");
-        setFeedback("");
-        setLocked(false);
-
-        return newRemaining;
       });
     }, 300);
   };
@@ -141,30 +136,12 @@ export default function App() {
     const current = itemsState[currentIndex];
     if (!current) return;
 
-    const answer = current.def.trim();
+    const answer = current.def;
     const user = input.trim();
 
-    // If in forced mode, only progress when the user types the correct answer
-    if (forced) {
-      if (user.toLowerCase() === answer.toLowerCase()) {
-        setFeedback("✅ Correct (forced)!");
-        updateItem(currentIndex, { correct: 1, weight: -1 });
-        setCorrectCount((c) => c + 1);
-        setForced(false);
-
-        setTimeout(() => {
-          moveToNext();
-        }, 2000); // show for 2 seconds
-      } else {
-        setFeedback("❌ Still incorrect. Type the correct answer to continue.");
-      }
-      setInput("");
-      return;
-    }
-
-    if (user === "") {
-      const wrongMsg = `❌ Incorrect, the answer was "${answer}".`;
-      setFeedback(wrongMsg);
+    if (user === "" && !forced) {
+      const prevFeedback = `❌ Incorrect, the answer was "${answer}".`;
+      setFeedback(prevFeedback);
       updateItem(currentIndex, { wrong: 1, weight: 2 });
       setForced(true);
       setAttempts(0);
@@ -176,21 +153,19 @@ export default function App() {
 
     if (isCorrect) {
       setFeedback("✅ Correct!");
-      updateItem(currentIndex, { correct: 1, weight: -1 });
+      if (!forced) updateItem(currentIndex, { correct: 1, weight: -1 });
       setCorrectCount((c) => c + 1);
-      setTimeout(() => {
-        moveToNext();
-      }, 2000);
+      moveToNext();
       return;
     }
 
-    if (attempts >= 1) {
-      const wrongMsg = `❌ Incorrect, the answer was "${answer}".`;
-      setFeedback(wrongMsg);
-      updateItem(currentIndex, { wrong: 1, weight: 2 });
+    if (forced || attempts >= 1) {
+      const prevFeedback = `❌ Incorrect, the answer was "${answer}".`;
+      setFeedback("You must type the correct answer!");
+      setInput("");
       setForced(true);
       setAttempts(0);
-      setInput("");
+      setTimeout(() => setFeedback(prevFeedback), 2000);
       return;
     }
 
@@ -202,14 +177,12 @@ export default function App() {
   const bgColor = theme === "dark" ? "#202124" : "#f3f2e8";
   const textColor = theme === "dark" ? "#fff" : "#202124";
   const inputBg = theme === "dark" ? "#2c2d2f" : "#e2e0d6";
+
   const pct = triedCount === 0 ? 0 : Math.round((correctCount / triedCount) * 1000) / 10;
 
   if (stage === "select")
     return (
-      <div
-        className="flex flex-col items-center justify-center min-h-screen space-y-6 px-4"
-        style={{ backgroundColor: bgColor, color: textColor }}
-      >
+      <div className="flex flex-col items-center justify-center min-h-screen space-y-6 px-4" style={{ backgroundColor: bgColor, color: textColor }}>
         <h1 className="text-4xl font-bold">Choose List To Study</h1>
         <select
           className="rounded-2xl px-4 py-3 w-full max-w-lg text-xl"
@@ -225,10 +198,7 @@ export default function App() {
         <button
           onClick={handleSelect}
           className="px-6 py-3 rounded-2xl font-bold text-xl hover:opacity-80 transition"
-          style={{
-            backgroundColor: theme === "dark" ? "#fff" : "#202124",
-            color: theme === "dark" ? "#202124" : "#fff",
-          }}
+          style={{ backgroundColor: theme === "dark" ? "#fff" : "#202124", color: theme === "dark" ? "#202124" : "#fff" }}
         >
           Select
         </button>
@@ -237,10 +207,7 @@ export default function App() {
 
   if (stage === "loading")
     return (
-      <div
-        className="flex items-center justify-center min-h-screen text-3xl animate-pulse"
-        style={{ backgroundColor: bgColor, color: textColor }}
-      >
+      <div className="flex items-center justify-center min-h-screen text-3xl animate-pulse" style={{ backgroundColor: bgColor, color: textColor }}>
         Loading your study session...
       </div>
     );
@@ -248,15 +215,10 @@ export default function App() {
   const current = itemsState[currentIndex] ?? { term: "", def: "" };
 
   return (
-    <div
-      className="flex flex-col justify-center min-h-screen w-full space-y-6 px-6 text-center"
-      style={{ backgroundColor: bgColor, color: textColor }}
-    >
+    <div className="flex flex-col justify-center min-h-screen w-full space-y-6 px-6 text-center" style={{ backgroundColor: bgColor, color: textColor }}>
       <div className="flex flex-col justify-center items-center h-full">
         <h2 className="text-3xl font-bold mb-2">{current.term}</h2>
-        <p className="text-sm mb-4">
-          {correctCount}/{triedCount} - {pct.toFixed(1)}%
-        </p>
+        <p className="text-sm mb-4">{correctCount}/{triedCount} - {pct.toFixed(1)}%</p>
         <input
           className="rounded-2xl px-4 py-3 w-full max-w-xl text-center text-xl focus:outline-none"
           value={input}
@@ -268,63 +230,33 @@ export default function App() {
         <button
           onClick={handleSubmit}
           className="px-6 py-3 mt-4 rounded-2xl font-bold text-xl hover:opacity-80 transition"
-          style={{
-            backgroundColor: theme === "dark" ? "#fff" : "#202124",
-            color: theme === "dark" ? "#202124" : "#fff",
-          }}
+          style={{ backgroundColor: theme === "dark" ? "#fff" : "#202124", color: theme === "dark" ? "#202124" : "#fff" }}
         >
           Submit
         </button>
-        <p
-          className="text-xl mt-4"
-          style={{ minHeight: "1.5em", visibility: feedback ? "visible" : "hidden" }}
-        >
-          {feedback || "Placeholder"}
-        </p>
+        {feedback && <p className="text-xl mt-4">{feedback}</p>}
       </div>
 
       {showStats && (
-        <div
-          className="fixed inset-0 flex items-center justify-center"
-          style={{
-            backgroundColor:
-              theme === "dark"
-                ? "rgba(32,33,36,0.95)"
-                : "rgba(243,242,232,0.95)",
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: theme === "dark" ? "#1a1a1c" : "#f7f6f0",
-              color: textColor,
-            }}
-            className="rounded-2xl p-6 w-full max-w-3xl mx-4"
-          >
+        <div className="fixed inset-0 flex items-center justify-center" style={{ backgroundColor: theme === "dark" ? "rgba(32,33,36,0.95)" : "rgba(243,242,232,0.95)" }}>
+          <div style={{ backgroundColor: theme === "dark" ? "#1a1a1c" : "#f7f6f0", color: textColor }} className="rounded-2xl p-6 w-full max-w-3xl mx-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-2xl font-bold">Stats</h3>
               <button
                 onClick={() => setShowStats(false)}
                 className="px-3 py-1 rounded-md font-semibold"
-                style={{
-                  backgroundColor: theme === "dark" ? "#fff" : "#202124",
-                  color: theme === "dark" ? "#202124" : "#fff",
-                }}
+                style={{ backgroundColor: theme === "dark" ? "#fff" : "#202124", color: theme === "dark" ? "#202124" : "#fff" }}
               >
                 Close
               </button>
             </div>
-            <div className="text-sm mb-2">
-              {correctCount}/{triedCount} - {pct.toFixed(1)}%
-            </div>
+            <div className="text-sm mb-2">{correctCount}/{triedCount} - {pct.toFixed(1)}%</div>
             <div className="max-h-[60vh] overflow-auto space-y-2">
               {itemsState.map((it, idx) => (
                 <div
                   key={idx}
                   className="p-2 rounded-md flex justify-between"
-                  style={{
-                    backgroundColor:
-                      theme === "dark" ? "#1c1c1e" : "#e0e0d6",
-                  }}
+                  style={{ backgroundColor: theme === "dark" ? "#1c1c1e" : "#e0e0d6" }}
                 >
                   <div>{it.term}</div>
                   <div className="flex space-x-4 text-sm">
