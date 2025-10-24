@@ -43,8 +43,7 @@ export default function App() {
       const newQueue = [...queue];
       newQueue.splice(index, 1);
       if (newQueue.length === 0) {
-        const reshuffled = shuffle([...studyItems]);
-        setQueue(reshuffled);
+        setQueue(shuffle([...studyItems]));
         setIndex(0);
       } else {
         setQueue(newQueue);
@@ -60,15 +59,14 @@ export default function App() {
           const newQueue = [...queue];
           newQueue.splice(index, 1);
           if (newQueue.length === 0) {
-            const reshuffled = shuffle([...studyItems]);
-            setQueue(reshuffled);
+            setQueue(shuffle([...studyItems]));
             setIndex(0);
           } else {
             setQueue(newQueue);
             setIndex(index % newQueue.length);
           }
         } else {
-          setFeedback("You must type the correct answer!");
+          setFeedback(`❌ Incorrect, the answer was "${current[1]}".`);
           setInput("");
         }
       } else {
@@ -86,10 +84,10 @@ export default function App() {
 
   if (stage === "select")
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen space-y-8 px-4">
-        <h1 className="text-5xl font-bold">Choose List To Study</h1>
+      <div className="flex flex-col items-center justify-center min-h-screen space-y-6 px-4">
+        <h1 className="text-4xl font-bold">Choose List To Study</h1>
         <select
-          className="bg-[#2c2d2f] rounded-2xl px-6 py-4 w-full max-w-lg text-2xl"
+          className="bg-[#2c2d2f] rounded-2xl px-4 py-3 w-full max-w-lg text-xl"
           value={selectedList}
           onChange={(e) => setSelectedList(e.target.value)}
         >
@@ -100,7 +98,7 @@ export default function App() {
         </select>
         <button
           onClick={handleSelect}
-          className="bg-white text-main px-8 py-4 rounded-2xl font-bold text-2xl hover:bg-gray-200 transition"
+          className="bg-white text-main px-6 py-3 rounded-2xl font-bold text-xl hover:bg-gray-200 transition"
         >
           Select
         </button>
@@ -109,17 +107,17 @@ export default function App() {
 
   if (stage === "loading")
     return (
-      <div className="flex items-center justify-center min-h-screen text-4xl animate-pulse">
+      <div className="flex items-center justify-center min-h-screen text-3xl animate-pulse">
         Loading your study session...
       </div>
     );
 
   return (
-    <div className="flex flex-col justify-center min-h-screen w-full space-y-8 px-6 text-center">
+    <div className="flex flex-col justify-center min-h-screen w-full space-y-6 px-6 text-center">
       <div className="flex flex-col justify-center items-center h-full">
-        <h2 className="text-6xl font-bold mb-12">{current[0]}</h2>
+        <h2 className="text-3xl font-bold mb-6">{current[0]}</h2>
         <input
-          className="bg-[#2c2d2f] rounded-2xl px-8 py-5 w-full max-w-2xl text-center text-3xl focus:outline-none"
+          className="bg-[#2c2d2f] rounded-2xl px-4 py-3 w-full max-w-xl text-center text-xl focus:outline-none"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
@@ -127,12 +125,12 @@ export default function App() {
         />
         <button
           onClick={handleSubmit}
-          className="bg-white text-main px-10 py-5 mt-6 rounded-2xl font-bold text-3xl hover:bg-gray-200 transition"
+          className="bg-white text-main px-6 py-3 mt-4 rounded-2xl font-bold text-xl hover:bg-gray-200 transition"
         >
           Submit
         </button>
-        {feedback && <p className="text-3xl mt-6">{feedback}</p>}
-        <p className="text-2xl opacity-70 mt-4">
+        {feedback && <p className="text-xl mt-4">{feedback}</p>}
+        <p className="text-lg opacity-70 mt-2">
           {studyItems.length - queue.length} Mastered / {studyItems.length} Total
         </p>
       </div>
