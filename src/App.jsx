@@ -98,10 +98,13 @@ export default function App() {
     const user = input.trim();
 
     if (user === "") {
-      setForced(true);
+      setFeedback(`❌ Incorrect, the answer was "${answer}".`);
+      setForced(false);
       setAttempts(0);
       setInput("");
-      setFeedback("You must type the correct answer!");
+      updateItem(currentIndex, { wrong: 1, weight: 2 });
+      const next = getNextIndex(itemsState, currentIndex);
+      setTimeout(() => setCurrentIndex(next), 2000);
       return;
     }
 
@@ -137,6 +140,8 @@ export default function App() {
       setAttempts(0);
       setInput("");
       updateItem(currentIndex, { wrong: 1, weight: 2 });
+      const next = getNextIndex(itemsState, currentIndex);
+      setTimeout(() => setCurrentIndex(next), 2000);
     } else {
       setFeedback("Wrong, try again!");
       setAttempts((a) => a + 1);
