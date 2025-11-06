@@ -6,11 +6,11 @@ export default function App() {
   const [itemsState, setItemsState] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(null);
   const [input, setInput] = useState("");
+  const [attempts, setAttempts] = useState(0);
   const [feedback, setFeedback] = useState("Type your answer.");
   const [stage, setStage] = useState("select");
   const [showStats, setShowStats] = useState(false);
   const [remainingThisRound, setRemainingThisRound] = useState([]);
-  const [waitingForNext, setWaitingForNext] = useState(false);
   const timeoutRef = useRef(null);
 
   useEffect(() => {
@@ -59,6 +59,7 @@ export default function App() {
       setRemainingThisRound(shuffled.map((_, i) => i).slice(1));
       setCurrentIndex(0);
       setStage("study");
+      setAttempts(0);
       setInput("");
       setFeedback("Type your answer.");
     }, 600);
@@ -82,51 +83,48 @@ export default function App() {
 
   const goToNext = (next) => {
     clearTimeout(timeoutRef.current);
-    setTimeout(() => {
+    timeoutRef.current = setTimeout(() => {
       setCurrentIndex(next);
       setInput("");
+      setAttempts(0);
       setFeedback("Type your answer.");
-      setWaitingForNext(false);
     }, 100);
   };
 
   const handleSubmit = () => {
-    if (showStats) {
-      setShowStats(false);
-      return;
-    }
-
-    // Handle if waiting for next
-    if (waitingForNext) {
-      const next = getNextIndex(itemsState, currentIndex);
-      goToNext(next);
-      return;
-    }
-
     if (input.trim() === "://list") {
       setShowStats(true);
       setInput("");
       return;
     }
 
+    if (currentIndex === null) return;
     const current = itemsState[currentIndex];
     if (!current) return;
 
     const answer = current.def;
     const user = input.trim();
 
+    if (user === "") {
+      setFeedback(`❌ Incorrect, the answer was "${answer}".`);
+      updateItem(currentIndex, { wrong: 1, weight: 2 });
+      goToNext(getNextIndex(itemsState, currentIndex));
+      return;
+    }
+
     if (user === answer) {
       setFeedback("✅ Correct!");
       updateItem(currentIndex, { correct: 1, weight: -1 });
-      setWaitingForNext(true);
+      goToNext(getNextIndex(itemsState, currentIndex));
       return;
-    } else {
-      setFeedback(`❌ Incorrect, the answer was "${answer}".`);
+    }
+
+    if (attempts >= 1) {
+      setFeedback(`❌ Incorrect, the answer was "${answer}". You must type the correct answer to continue.`);
       updateItem(currentIndex, { wrong: 1, weight: 2 });
-      setWaitingForNext(true);
-      timeoutRef.current = setTimeout(() => {
-        setFeedback("");
-      }, 400); // hides feedback quickly
+    } else {
+      setFeedback("❌ Wrong, try again!");
+      setAttempts((a) => a + 1);
     }
 
     setInput("");
@@ -172,7 +170,7 @@ export default function App() {
   const current = itemsState[currentIndex] ?? { term: "", def: "" };
 
   return (
-    <div className="flex flex-col justify-center min-h-screen w-full space-y-6 px-6 text-center bg-[#202124] text-white">
+    <div className="flex flex-col justify-center min-h-screen w-full space-y-6 px-6 text-center bg-[#202124]">
       <div className="flex flex-col justify-center items-center h-full">
         <h2 className="text-3xl font-bold mb-6">{current.term}</h2>
         <input
@@ -181,13 +179,12 @@ export default function App() {
           onChange={handleInputChange}
           onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
           placeholder="Type your answer"
-          disabled={waitingForNext}
         />
         <button
           onClick={handleSubmit}
-          className="bg-white text-main px-6 py-3 mt-4 rounded-2xl font-bold text-xl hover:bg-gray-200 transition text-[#202124]"
+          className="bg-white text-main px-6 py-3 mt-4 rounded-2xl font-bold text-xl hover:bg-gray-200 transition"
         >
-          {waitingForNext ? "Next" : "Submit"}
+          Submit
         </button>
         {feedback && <p className="text-xl mt-4">{feedback}</p>}
       </div>
@@ -204,7 +201,7 @@ export default function App() {
                 Close
               </button>
             </div>
-            <div className="max-h-[60vh] overflow-auto space-y-2">
+            <div className="max-h-[60vh] overflow-auto space-y-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-[#1a1a1c]">
               {itemsState.map((it, idx) => (
                 <div key={idx} className="p-2 rounded-md flex justify-between bg-[#1c1c1e]">
                   <div>{it.term}</div>
